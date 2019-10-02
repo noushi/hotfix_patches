@@ -1,0 +1,58 @@
+#!/bin/bash
+
+
+get_artifacts() {
+    lab openshift-webconsole start
+    #oc login -u kubeadmin -p $(cat .kubeadmin) https://cluster-api.lab.example.com:6443
+}
+
+
+prepare_cert() {
+    scp root@services:/etc/pki/ca-trust/source/anchors/example.com.crt /tmp
+}
+
+fix_workstation() {
+    sudo cp /tmp/example.com.crt /etc/pki/ca-trust/source/anchors
+    sudo update-ca-trust extract
+}
+
+fix_cluster() {
+    for i in master0 worker{0,1} ; do
+	sudo scp /tmp/example.com.crt core@$i:
+	sudo ssh core@$i sudo ls -la example.com.crt /etc/pki/ca-trust/source/anchors
+	sudo ssh core@$i sudo cp example.com.crt /etc/pki/ca-trust/source/anchors
+	sudo ssh core@$i sudo update-ca-trust extract
+    done
+}
+
+
+fix_lb() {
+    PORT1=${1:-32362}
+    PORT2=${2:-31666}
+    
+    ssh root@lb sed -i.bkp  -e s/$PORT1/31577/ -e s/$PORT2/31941/ /etc/haproxy/haproxy.cfg
+    ssh root@lb systemctl restart haproxy 
+}
+
+
+# run this echo for i in master0 worker{0,1} ; do ( rht-vmctl  stop  $i ; rht-vmctl  start  $i ) & done 
+
+run() {
+    get_artifacts
+    prepare_cert
+    fix_workstation
+    fix_cluster
+    fix_lb "$@"
+
+    echo run this on fX : 'echo for i in master0 worker{0,1} ; do ( rht-vmctl  stop  $i ; rht-vmctl  start  $i ) & done '
+}
+
+
+#if [ $# = 0 ] ; then
+#    ssh root@lb cat /etc/haproxy/haproxy.cfg
+#    echo "=======> get the two ports from the file output and run: $0 port1 port2"
+#else
+#    run "$@"
+#fi
+
+run "$@"
