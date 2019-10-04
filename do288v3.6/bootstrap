@@ -1,0 +1,13 @@
+#!/bin/bash
+
+MACHINES=$(seq 0 12)
+
+GOOD_OLD_TIMES="Aug 1 2019"
+
+for i in $MACHINES ; do for srv in  workstation node{1,2} services master ;do echo "====> on foundation $i , $srv:  " ; ssh -ttt root@w$i  ssh $srv systemctl disable --now chronyd ; done ; done  
+
+for i in $MACHINES ; do for srv in  workstation node{1,2} services master ;do echo "====> on foundation $i , $srv:  " ; ssh -ttt root@w$i  ssh $srv systemctl status chronyd |grep Active: ; done ; done 
+
+for i in $MACHINES ; do for srv in  workstation node{1,2} services master ;do echo "====> on foundation $i , $srv:  " ; ssh -ttt root@w$i  ssh $srv date -s '\"Aug 1 2019\"' ; done ; done 
+
+for i in $MACHINES ; do for srv in  workstation node{1,2} services master ;do echo "====> on foundation $i , $srv:  " ; ssh -ttt root@w$i  ssh $srv shutdown -r now ; done ; done 
