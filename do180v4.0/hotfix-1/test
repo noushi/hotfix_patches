@@ -1,0 +1,110 @@
+#!/bin/bash
+
+setup() {
+    oc login --insecure-skip-tls-verify=true -u kubeadmin -p $(cat .kubeadmin) https://cluster-api.lab.example.com:6443
+}
+
+test_1() {
+    oc new-project test 
+    oc new-app registry.lab.example.com/httpd:2.4 --insecure-registry 
+    oc get pod -w &
+    echo -n DONE? ;  read
+    killall oc
+    oc delete project test
+}
+
+
+test_3() {
+    oc new-app --docker-image=registry.lab.example.com/rhscl/mysql-57-rhel7:latest --name=mysql-openshift -e MYSQL_USER=user1 -e MYSQL_PASSWORD=mypa55 -e MYSQL_DATABASE=testdb -e MYSQL_ROOT_PASSWORD=r00tpa55 --insecure-registry=true
+
+
+    oc port-forward mysql-openshift-1-qs7cm 3306:3306 &
+
+    echo "show databases;" | mysql -uuser1 -pmypa55 --protocol tcp -h localhost
+
+    oc delete project test
+}
+
+
+test_4() {
+    oc new-project route
+
+    oc new-app php:5.6~http://services.lab.example.com/php-helloworld 
+
+    oc get pod -w
+
+    oc logs -f bc/php-helloworld
+
+    oc logs -f dc/php-helloworld
+
+    oc describe svc/php-helloworld
+
+    oc expose svc/php-helloworld
+
+
+
+    curl php-helloworld-route.apps.cluster.lab.example.com
+
+    oc expose svc/php-helloworld --name=xyz 
+
+
+    curl xyz-route.apps.cluster.lab.example.com
+
+    oc delete project route
+}
+
+test_5() {
+
+    lab openshift-s2i start 
+
+    cd ~/DO180/labs/openshift-s2i
+
+    tree -C s2i-php-container
+
+    oc new-project s2i
+
+    oc new-app -i php:5.6 --name=php-helloworld http://services.lab.example.com/php-helloworld 
+
+    oc get pod -w
+
+    oc logs --all-containers -f php-helloworld-1-build 
+
+    oc expose svc/php-helloworld --name helloworld
+
+    curl helloworld-s2i.apps.cluster.lab.example.com
+
+
+    git clone http://services.lab.example.com/php-helloworld 
+
+    cd php-helloworld
+
+    cat >index.php <<EOF 
+<?php
+print "Hello, World! php version is " . PHP_VERSION . "\n";
+print "A change is coming!\n";
+?>
+EOF
+
+    git add index.php 
+    git commit -m 'Changed index page contents.'
+    git push origin master
+    oc start-build php-helloworld
+    oc logs --all-containers -f php-helloworld-2-build 
+    curl helloworld-s2i.apps.cluster.lab.example.com
+
+    lab openshift-s2i finish
+
+
+    lab openshift-webconsole start
+
+    firefox  https://console-openshift-console.apps.cluster.lab.example.com
+
+    oc delete project s2i
+} 
+
+teardown() {
+    oc logout
+}
+
+echo "source me and run setup, test_X and eventually teardown."
+echo "you might also want to execute line by line..."
