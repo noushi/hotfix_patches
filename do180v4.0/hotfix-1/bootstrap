@@ -1,8 +1,8 @@
 #!/bin/sh
 
-for i in 0 `seq 1 12 ` ; do scp do180_ocp4.0_hotfix w$i:  & done
+for i in 0 `seq 1 12 ` ; do scp do180_ocp4.0 w$i:  & done
 
-for i in 0 `seq 1 12 ` ; do ssh w$i bash do180_ocp4.0_hotfix   & done
+for i in 0 `seq 1 12 ` ; do ssh w$i bash do180_ocp4.0 & done
 
 # for i in master0 worker{0,1} ; do ( rht-vmctl  stop  $i ; rht-vmctl  start  $i ) & done
 
