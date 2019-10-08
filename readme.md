@@ -30,3 +30,12 @@ Patches are most welcome be they regarding the courses already covered or for ne
 
 The structure is meant to be as generic as possible while still abiding by a few conventions in order to automate patch application itself.
 
+# TODO
+
+- [ ] make the fX loop match registered machines
+
+- [ ] investigate rc.local use for hotfix bootstrapping
+
+- [ ] validate do288v3.6 for v3.9
+
+
